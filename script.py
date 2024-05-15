@@ -124,6 +124,9 @@ for obj in response.get('Contents', []):
 
 #read transcript into speaker turns
 def construct_transcript_turns(speech_data):
+    """
+    need to pass in transcript_json['results']['items']
+    """
     turns = []
     current_speaker = None
     current_content = []
@@ -169,7 +172,7 @@ def get_call_urls(df):
     return call_urls
 def start_transcription_job(job_name, media_s3_uri, output_bucket, output_key):
     transcribe_client=boto3.client('transcribe', region_name='us-east-2') #check bucket region
-    transcribe_client.start_transcription_job(
+    return transcribe_client.start_transcription_job(
         TranscriptionJobName = job_name,
         Media = {
             'MediaFileUri': media_s3_uri
@@ -187,15 +190,125 @@ def start_transcription_job(job_name, media_s3_uri, output_bucket, output_key):
         LanguageCode = 'en-US'
     )
 
+def start_call_analytics_job(job_name, transcription_job_name, output_bucket):
+    transcribe_client=boto3.client('transcribe', region_name='us-east-2') #check bucket region
+    return transcribe_client.start_call_analytics_job(
+        CallAnalyticsJobName = job_name,
+        Media = {
+            'MediaFileUri': f's3://{output_bucket}/transcription-output/{transcription_job_name}.json'
+            },
+        OutputLocation =  f's3://{output_bucket}/call-analytics-output/analytics-{transcription_job_name}.json',
+    )
+
 # start the transcription job with each key
+job_names=[]
 for key in keys:
     #make the job name just the key without the prefix
     job_name = key.split('/')[-1].split('.')[0]
     print(job_name)
     if len(job_name) > 0:
-        start_transcription_job(
-            job_name,
+        job_names.append(start_transcription_job(
+            f'{job_name}-2',
             f's3://synergy-sandbox-905418409497/{key}',
             'synergy-sandbox-905418409497',
             f'transcription-output/{job_name}-transcription.json'
         )
+        )
+
+#list transcription jobs
+transcribe=boto3.client('transcribe', region_name='us-east-2')
+response = transcribe.list_transcription_jobs(
+    MaxResults=5,
+)
+
+job_names = []
+while 'NextToken' in response:
+    for job in response['TranscriptionJobSummaries']:
+        job_names.append(job['TranscriptionJobName'])
+    response = transcribe.list_transcription_jobs(
+        NextToken=response['NextToken'],
+    )
+    # if it's the last one, without a NextToken
+    if 'NextToken' not in response:
+        for job in response['TranscriptionJobSummaries']:
+            job_names.append(job['TranscriptionJobName'])
+
+# get the transcription job s3 uri
+s3_uris=[]
+for job_name in job_names:
+    transcribe=boto3.client('transcribe', region_name='us-east-2')
+    response = transcribe.get_transcription_job(
+        TranscriptionJobName=job_name
+    )
+    s3_uris.append(response['TranscriptionJob']['Transcript']['TranscriptFileUri'])
+
+# json file at an s3 uri. download it
+
+def download_transcription(s3_uri):
+    s3 = boto3.client('s3', region_name='us-east-2')
+    bucket = s3_uri.split('/')[3]
+    key = '/'.join(s3_uri.split('/')[4:])
+    response = s3.get_object(Bucket=bucket, Key=key)
+    data = response['Body'].read()
+    return json.loads(data)
+
+### analysis
+"""
+prompts
+
+to find objections
+
+1
+above is a phone conversation transcript. The agent who received the call is "spk_0". 
+A customer is "spk_1". The company taking the call offers structured debt services for people 
+with debts they cannot pay off, such as credit card debt or medical bills. This is a sales call. 
+Find all the objections the customer discusses in this call. List them in an array.
+
+2
+above is a phone conversation transcript. The agent who received the call is "spk_0". 
+A customer is "spk_1". The company taking the call offers structured debt services for people 
+with debts they cannot pay off, such as credit card debt or medical bills. This is a sales call. 
+Find all the objections the customer discusses in this call, such as concerns about whether 
+the offer is legitimate, and whether the credit check will hurt them. List them in an array.
+Do not include the agent's objections, only those of the customer.
+
+3
+above is a phone conversation transcript. The agent who received the call is "spk_0". 
+The customer is "spk_1". The company taking the call offers structured debt services for people 
+with debts they cannot pay off, such as credit card debt or medical bills. This is a sales call 
+where the agent seeks to get the customer to commit to the service.
+Find all the objections the customer discusses in this call, such as concerns about whether 
+the offer is legitimate, and whether the credit check will hurt them. List them in an array.
+Do not include the agent's objections. Only list those of the customer. Combine similar objections.
+For example, if the customer expresses doubt about the sincerity of the offer in two different ways,
+combine them into one objection. For each objection, state how the agent handles responds. 
+If the agent doesn't directly address the objection, state how the agent redirects the conversation. 
+Return a response like this:
+[{objection: ..., response: ...}, ...]
+
+
+list and categorize highlights
+above is a phone conversation transcript. The agent who received the call is "spk_0". 
+The customer is "spk_1". The company taking the call offers structured debt services for people 
+with debts they cannot pay off, such as credit card debt or medical bills. This is a sales call 
+where the agent seeks to get the customer to commit to the service. 
+Find up to 10 highlights of the call. A highlight is a moment in the conversation where the agent
+successfully handles an objection or concern of the customer, or where the agent successfully convinces
+the customer to commit to the service, or where the agent clearly explains the service in a way that
+the customer seems to understand. List the highlights in an array. For each highlight, quote the part of 
+the transcript that you are highlighting, summarize the highlight, and categorize it as one of the following:
+- objection_handled
+- customer_convinced
+- positive_rapport
+- de_escalation
+- service_explained
+- other
+
+
+Find all the objections the
+Find all the turning points in this call. A turning point is a moment in the conversation
+where the customer's tone or attitude changes significantly. This could be a moment where the customer
+seems to become convinced they want to do it, or a moment where they become convinced they don't want to do it.
+List the turning points in an array. For each turning point, state what the customer says that indicates the change
+and summarize the sequence of events that led up to the turning point.
+"""
