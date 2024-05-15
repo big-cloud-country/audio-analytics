@@ -1,8 +1,9 @@
 import os, json, io
-import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 import boto3
+import pandas as pd
+
 
 # getting mp3 audio
 """
@@ -190,14 +191,29 @@ def start_transcription_job(job_name, media_s3_uri, output_bucket, output_key):
         LanguageCode = 'en-US'
     )
 
-def start_call_analytics_job(job_name, transcription_job_name, output_bucket):
-    transcribe_client=boto3.client('transcribe', region_name='us-east-2') #check bucket region
+#automatically flags categories
+def start_call_analytics_job(job_name, input_media_uri, output_bucket):
+    transcribe_client=boto3.client('transcribe', region_name='us-east-1') #check bucket region
     return transcribe_client.start_call_analytics_job(
         CallAnalyticsJobName = job_name,
+        Settings = {
+            'LanguageOptions': ['en-US'],
+        },
+        DataAccessRoleArn='arn:aws:iam::905418409497:role/service-role/AmazonTranscribeServiceRole-my-transcribe-role',
         Media = {
-            'MediaFileUri': f's3://{output_bucket}/transcription-output/{transcription_job_name}.json'
+            'MediaFileUri': input_media_uri
+        },
+        OutputLocation =  f's3://{output_bucket}/call-analytics-output/analytics-{job_name}.json',
+        ChannelDefinitions = [
+            {
+                'ChannelId': 0,
+                'ParticipantRole': 'AGENT'
             },
-        OutputLocation =  f's3://{output_bucket}/call-analytics-output/analytics-{transcription_job_name}.json',
+            {
+                'ChannelId': 1,
+                'ParticipantRole': 'CUSTOMER'
+            }
+        ]
     )
 
 # start the transcription job with each key
@@ -303,6 +319,8 @@ the transcript that you are highlighting, summarize the highlight, and categoriz
 - de_escalation
 - service_explained
 - other
+your response should look like this:
+[{quote: ..., summary: ..., category: ...}, ...]
 
 
 Find all the objections the
@@ -312,3 +330,159 @@ seems to become convinced they want to do it, or a moment where they become conv
 List the turning points in an array. For each turning point, state what the customer says that indicates the change
 and summarize the sequence of events that led up to the turning point.
 """
+
+def list_objections(conversation_turns):
+    prompt = """
+    above is a phone conversation transcript. The agent who received the call is "spk_0". 
+    The customer is "spk_1". The company taking the call offers structured debt services for people 
+    with debts they cannot pay off, such as credit card debt or medical bills. This is a sales call 
+    where the agent seeks to get the customer to commit to the service.
+    Find all the objections the customer discusses in this call, such as concerns about whether 
+    the offer is legitimate, and whether the credit check will hurt them. List them in an array.
+    Do not include the agent's objections. Only list those of the customer. Combine similar objections.
+    For example, if the customer expresses doubt about the sincerity of the offer in two different ways,
+    combine them into one objection. For each objection, state how the agent handles responds. 
+    If the agent doesn't directly address the objection, state how the agent redirects the conversation. 
+    Return a response like this:
+    [{objection: ..., response: ...}, ...]
+    """
+    # call the llm
+    return []
+
+def list_highlights(conversation_turns):
+    prompt = """
+    above is a phone conversation transcript. The agent who received the call is "spk_0". 
+The customer is "spk_1". The company taking the call offers structured debt services for people 
+with debts they cannot pay off, such as credit card debt or medical bills. This is a sales call 
+where the agent seeks to get the customer to commit to the service. 
+Find up to 10 highlights of the call. A highlight is a moment in the conversation where the agent
+successfully handles an objection or concern of the customer, or where the agent successfully convinces
+the customer to commit to the service, or where the agent clearly explains the service in a way that
+the customer seems to understand. List the highlights in an array. For each highlight, quote the part of 
+the transcript that you are highlighting, summarize the highlight, and categorize it as one of the following:
+- objection_handled
+- customer_convinced
+- positive_rapport
+- de_escalation
+- service_explained
+- other
+your response should look like an array of json objects like this:
+[{"quote": "...", "summary": "...", "category": "..."}, ...]
+The response must be json-safe, meaning if you use quotes you should escape them.
+JSON:
+    """
+    # call the llm
+    return []
+
+def analyze_post_call_analytics(s3_uri):
+    """
+    10 for the analytics, just make it a binary on the categories (rapport, and mechanics), --
+     % talk and % silence, avg words per minute, num interruptions, overall sentiment, call time
+    """
+    # download the file from s3, it's a json
+    data = download_transcription(s3_uri)
+
+    # ConversationCharacteristics
+    duration = data['ConversationCharacteristics']['TotalConversationDurationMillis']
+    talk_time = data['ConversationCharacteristics']['TalkTime']['TotalTimeMillis']
+    silence_time = data['ConversationCharacteristics']['NonTalkTime']['TotalTimeMillis']
+    talk_speed = data['ConversationCharacteristics']['TalkSpeed']['DetailsByParticipant']['AGENT']['AverageWordsPerMinute']
+    num_interruptions = data['ConversationCharacteristics']['Interruptions']['TotalCount']
+    overall_sentiment = data['ConversationCharacteristics']['Sentiment']['OverallSentiment']['AGENT']
+
+    talk_time_percent = talk_time / duration
+    silence_time_percent = silence_time / duration
+
+    #find matched categories if they exist
+    categories = data['Categories']['MatchedCategories'] #an array of categories
+
+    # add these to a database
+    return {
+        'duration': duration,
+        'talk_time': talk_time,
+        'silence_time': silence_time,
+        'talk_speed': talk_speed,
+        'num_interruptions': num_interruptions,
+        'overall_sentiment': overall_sentiment,
+        'talk_time_percent': talk_time_percent,
+        'silence_time_percent': silence_time_percent,
+        'categories': categories
+    }
+
+def analyze_transcript(transcript_json):
+    """
+    find objections and classify
+    find highlights and classify
+    """
+    # contains each work spoken
+    speech_data = transcript_json['results']['items']
+
+    # Construct transcript turns
+    conversation = construct_transcript_turns(speech_data)
+    objections = []
+    highlights = []
+
+
+# overall processing algorithm
+"""
+1. get the call log
+2. get the call urls
+3. download the mp3 files
+4. start the transcription jobs
+5. start the call analytics jobs
+6. put both into a queue
+7. poll the queue after 5 min
+8. download the transcriptions
+9. download the analytics
+10 for the analytics, just make it a binary on the categories (rapport, and mechanics), -- % talk and % silence, avg words per minute, num interruptions, overall sentiment, call time
+11. for the transcriptions,  get the speaker turns then do the analysis
+- find objections and classify
+- find highlights and classify
+
+FUTURE: write a prompt that describes correct objection handling, and then compare the agent's responses to the correct responses, give them a score.
+"""
+
+#mistrla
+"""
+{
+  "modelId": "mistral.mistral-7b-instruct-v0:2",
+  "contentType": "application/json",
+  "accept": "application/json",
+  "body": "{\"prompt\":\"<s>[INST]In Bash, how do I list all text files in the current directory (excluding subdirectories) that have been modified in the last month?[/INST]\",\"max_tokens\":400,\"top_k\":50,\"top_p\":0.7,\"temperature\":0.7}"
+}
+"""
+
+# def invoke_model(prompt):
+#     bedrock_runtime = boto3.client('bedrock-runtime', region_name='us-east-1')
+#     enclosed_prompt = "<s>[INST]" + prompt + "[/INST]"
+#     body = {
+#         "prompt": enclosed_prompt,
+#         "max_tokens": 1000,
+#     }
+#     response = bedrock_runtime.invoke_model(
+#         body=json.dumps(body),
+#         contentType='application/json',
+#         accept='application/json',
+#         modelId='mistral.mistral-7b-instruct-v0:2'
+#     )
+#     response_body = json.loads(response["body"].read())
+#     completion = response_body["completion"]
+#     return json.loads(completion.strip())
+
+def invoke_model(prompt):
+    bedrock_runtime = boto3.client('bedrock-runtime', region_name='us-east-1')
+    enclosed_prompt = "<s>[INST]" + prompt + "[/INST]"
+    body = {
+        "prompt": enclosed_prompt,
+        "max_tokens": 1000,
+    }
+    response = bedrock_runtime.invoke_model(
+        body=json.dumps(body),
+        contentType='application/json',
+        accept='application/json',
+        modelId='mistral.mistral-7b-instruct-v0:2'
+    )
+    response_body = json.loads(response["body"].read())
+    return response_body
+    #resp=invoke_model(prompt)
+    #json.loads(resp['outputs'][0]['text'].strip())
