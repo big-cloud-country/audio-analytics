@@ -4,6 +4,17 @@ from bs4 import BeautifulSoup
 import boto3
 import pandas as pd
 
+# overall script - container?
+"""
+0. input: call log csv s3 location (do a small one first)
+1. get the call log and filter out calls that are > 20 seconds
+2. transcribe 2 ways and wait (take job ids into 2 arrays)
+3. "while True" loop to check the status of the jobs
+3. fetch the outputs
+4. analyze the outputs
+5. new dataframe, write out to s3 as csv.
+"""
+
 # getting mp3 audio
 """
 - open the call log
@@ -91,6 +102,7 @@ def download_mp3_from_html(url, save_path):
                     if chunk:
                         file.write(chunk)
             print(f"Downloaded: {save_path}")
+            return save_path
         else:
             print("MP3 URL not found in the HTML.")
     except Exception as e:
@@ -102,22 +114,22 @@ def download_mp3_from_html(url, save_path):
 # save_path = "downloads-new/mp3file.mp3"
 # download_mp3_from_html(original_url, save_path)
 
-call_urls = [
-    'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=REa8fae3124d2512357eeee072724f6ac0',
-    'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=RE7ddb9736596ff72af3a6e83aadb3f8be',
-    'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=REb6d960d0e8c20f62e95373569fee8f28',
-    'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=RE5f8b4ce0a74338da9a21e7bc0d4720b8',
-    'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=REe3343dc4545bf88c637c083d555401db',
-    'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=REdb2ef4ebfea7fe431da9deb4c3a9ddcb',
-    'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=RE5ffa36faa3134bb9b235b00a1fc3a6d4',
-    'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=RE0c54a5f09c9db90f54844cc6c317e570',
-    'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=REa9306adb927342f34f5d6f5ce52a9beb',
-    'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=RE140d7767d0b97cf299c70567499846ae']
-
-for call_url in call_urls:
-    save_path = f"downloads-1/{call_url.split('=')[-1]}.mp3"
-    download_mp3_from_html(call_url, save_path)
-
+# call_urls = [
+#     'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=REa8fae3124d2512357eeee072724f6ac0',
+#     'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=RE7ddb9736596ff72af3a6e83aadb3f8be',
+#     'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=REb6d960d0e8c20f62e95373569fee8f28',
+#     'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=RE5f8b4ce0a74338da9a21e7bc0d4720b8',
+#     'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=REe3343dc4545bf88c637c083d555401db',
+#     'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=REdb2ef4ebfea7fe431da9deb4c3a9ddcb',
+#     'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=RE5ffa36faa3134bb9b235b00a1fc3a6d4',
+#     'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=RE0c54a5f09c9db90f54844cc6c317e570',
+#     'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=REa9306adb927342f34f5d6f5ce52a9beb',
+#     'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=RE140d7767d0b97cf299c70567499846ae']
+#
+# for call_url in call_urls:
+#     save_path = f"downloads-1/{call_url.split('=')[-1]}.mp3"
+#     download_mp3_from_html(call_url, save_path)
+#
 
 def construct_transcript_turns(speech_data):
     """
@@ -142,24 +154,24 @@ def construct_transcript_turns(speech_data):
     return turns
 
 
-# use boto3 s3 client to list all files in s3://synergy-sandbox-905418409497/test-transcribe-automation/
-s3 = boto3.client('s3')
-response = s3.list_objects_v2(Bucket='synergy-sandbox-905418409497', Prefix='test-transcribe-automation/')
-keys = []
-for obj in response.get('Contents', []):
-    keys.append(obj['Key'])
-
-# now for each key, download the json file and load it into a variable
-# then extract the speaker turns
-conversations = []
-for key in keys:
-    s3 = boto3.client('s3')
-    response = s3.get_object(Bucket='synergy-sandbox-905418409497', Key=key)
-    data = json.loads(response['Body'].read())
-    speech_data = data['results']['items']
-    # Construct transcript turns
-    conversation = construct_transcript_turns(speech_data)
-    conversations.append(conversation)
+# # use boto3 s3 client to list all files in s3://synergy-sandbox-905418409497/test-transcribe-automation/
+# s3 = boto3.client('s3')
+# response = s3.list_objects_v2(Bucket='synergy-sandbox-905418409497', Prefix='test-transcribe-automation/')
+# keys = []
+# for obj in response.get('Contents', []):
+#     keys.append(obj['Key'])
+#
+# # now for each key, download the json file and load it into a variable
+# # then extract the speaker turns
+# conversations = []
+# for key in keys:
+#     s3 = boto3.client('s3')
+#     response = s3.get_object(Bucket='synergy-sandbox-905418409497', Key=key)
+#     data = json.loads(response['Body'].read())
+#     speech_data = data['results']['items']
+#     # Construct transcript turns
+#     conversation = construct_transcript_turns(speech_data)
+#     conversations.append(conversation)
 
 # read transcript into speaker turns
 
@@ -173,10 +185,10 @@ for turn in transcript_turns:
 """
 
 
-def fetch_call_log():
+# bucket_name = 'synergy-sandbox-905418409497'
+# object_key = 'sample-data-callerready/Call Log Advanced 4_1 4_15.csv'
+def fetch_call_log(bucket_name, object_key):
     s3 = boto3.resource('s3')
-    bucket_name = 'synergy-sandbox-905418409497'
-    object_key = 'sample-data-callerready/Call Log Advanced 4_1 4_15.csv'
     obj = s3.Object(bucket_name, object_key)
     data = obj.get()['Body'].read()
     # put into a df
@@ -184,7 +196,7 @@ def fetch_call_log():
     return df
 
 
-def get_call_urls(df):
+def get_call_urls(df, duration_threshold=20):
     # filter out calls that are > 20 seconds
     # make list
     call_urls = []
@@ -194,7 +206,7 @@ def get_call_urls(df):
 
 
 def start_transcription_job(job_name, media_s3_uri, output_bucket, output_key):
-    transcribe_client = boto3.client('transcribe', region_name='us-east-2')  # check bucket region
+    transcribe_client = boto3.client('transcribe', region_name='us-east-1')  # check bucket region
     return transcribe_client.start_transcription_job(
         TranscriptionJobName=job_name,
         Media={
@@ -208,11 +220,12 @@ def start_transcription_job(job_name, media_s3_uri, output_bucket, output_key):
             'MaxSpeakerLabels': 2,
             'ChannelIdentification': False,
             'ShowAlternatives': False,
-            'MaxAlternatives': 1
         },
         LanguageCode='en-US'
     )
-
+"""
+{'TranscriptionJob': {'TranscriptionJobName': 'REe4229b1e1f87f6fde4b5fbced6ba7d2a', 'TranscriptionJobStatus': 'IN_PROGRESS', 'LanguageCode': 'en-US', 'MediaFormat': 'mp3', 'Media': {'MediaFileUri': 's3://synergy-sandbox-us-east-1-905418409497/mp3-downloads/REe4229b1e1f87f6fde4b5fbced6ba7d2a.mp3'}, 'StartTime': datetime.datetime(2024, 5, 16, 17, 1, 51, 7000, tzinfo=tzlocal()), 'CreationTime': datetime.datetime(2024, 5, 16, 17, 1, 50, 979000, tzinfo=tzlocal()), 'Settings': {'ShowSpeakerLabels': True, 'MaxSpeakerLabels': 2, 'ChannelIdentification': False, 'ShowAlternatives': False}}, 'ResponseMetadata': {'RequestId': '5a86a5d7-c1cd-4a5a-aac7-c7149565c4ae', 'HTTPStatusCode': 200, 'HTTPHeaders': {'x-amzn-requestid': '5a86a5d7-c1cd-4a5a-aac7-c7149565c4ae', 'content-type': 'application/x-amz-json-1.1', 'content-length': '463', 'date': 'Thu, 16 May 2024 22:01:50 GMT'}, 'RetryAttempts': 0}}
+"""
 
 # automatically flags categories
 def start_call_analytics_job(job_name, input_media_uri, output_bucket):
@@ -238,50 +251,53 @@ def start_call_analytics_job(job_name, input_media_uri, output_bucket):
             }
         ]
     )
+"""
+{'CallAnalyticsJob': {'CallAnalyticsJobName': 'REe4229b1e1f87f6fde4b5fbced6ba7d2a', 'CallAnalyticsJobStatus': 'IN_PROGRESS', 'Media': {'MediaFileUri': 's3://synergy-sandbox-us-east-1-905418409497/mp3-downloads/REe4229b1e1f87f6fde4b5fbced6ba7d2a.mp3'}, 'StartTime': datetime.datetime(2024, 5, 16, 17, 1, 51, 393000, tzinfo=tzlocal()), 'CreationTime': datetime.datetime(2024, 5, 16, 17, 1, 51, 363000, tzinfo=tzlocal()), 'DataAccessRoleArn': 'arn:aws:iam::905418409497:role/service-role/AmazonTranscribeServiceRole-my-transcribe-role', 'Settings': {'LanguageOptions': ['en-US']}, 'ChannelDefinitions': [{'ChannelId': 0, 'ParticipantRole': 'AGENT'}, {'ChannelId': 1, 'ParticipantRole': 'CUSTOMER'}]}, 'ResponseMetadata': {'RequestId': '71877087-cc17-46a8-beab-a34fa9803b14', 'HTTPStatusCode': 200, 'HTTPHeaders': {'x-amzn-requestid': '71877087-cc17-46a8-beab-a34fa9803b14', 'content-type': 'application/x-amz-json-1.1', 'content-length': '570', 'date': 'Thu, 16 May 2024 22:01:50 GMT'}, 'RetryAttempts': 0}}
+"""
 
-
-# start the transcription job with each key
-job_names = []
-for key in keys:
-    # make the job name just the key without the prefix
-    job_name = key.split('/')[-1].split('.')[0]
-    print(job_name)
-    if len(job_name) > 0:
-        job_names.append(start_transcription_job(
-            f'{job_name}-2',
-            f's3://synergy-sandbox-905418409497/{key}',
-            'synergy-sandbox-905418409497',
-            f'transcription-output/{job_name}-transcription.json'
-        )
-        )
-
-# list transcription jobs
-transcribe = boto3.client('transcribe', region_name='us-east-2')
-response = transcribe.list_transcription_jobs(
-    MaxResults=5,
-)
-
-job_names = []
-while 'NextToken' in response:
-    for job in response['TranscriptionJobSummaries']:
-        job_names.append(job['TranscriptionJobName'])
-    response = transcribe.list_transcription_jobs(
-        NextToken=response['NextToken'],
-    )
-    # if it's the last one, without a NextToken
-    if 'NextToken' not in response:
-        for job in response['TranscriptionJobSummaries']:
-            job_names.append(job['TranscriptionJobName'])
-
-# get the transcription job s3 uri
-s3_uris = []
-for job_name in job_names:
-    transcribe = boto3.client('transcribe', region_name='us-east-2')
-    response = transcribe.get_transcription_job(
-        TranscriptionJobName=job_name
-    )
-    s3_uris.append(response['TranscriptionJob']['Transcript']['TranscriptFileUri'])
-
+#
+# # start the transcription job with each key
+# job_names = []
+# for key in keys:
+#     # make the job name just the key without the prefix
+#     job_name = key.split('/')[-1].split('.')[0]
+#     print(job_name)
+#     if len(job_name) > 0:
+#         job_names.append(start_transcription_job(
+#             f'{job_name}-2',
+#             f's3://synergy-sandbox-905418409497/{key}',
+#             'synergy-sandbox-905418409497',
+#             f'transcription-output/{job_name}-transcription.json'
+#         )
+#         )
+#
+# # list transcription jobs
+# transcribe = boto3.client('transcribe', region_name='us-east-2')
+# response = transcribe.list_transcription_jobs(
+#     MaxResults=5,
+# )
+#
+# job_names = []
+# while 'NextToken' in response:
+#     for job in response['TranscriptionJobSummaries']:
+#         job_names.append(job['TranscriptionJobName'])
+#     response = transcribe.list_transcription_jobs(
+#         NextToken=response['NextToken'],
+#     )
+#     # if it's the last one, without a NextToken
+#     if 'NextToken' not in response:
+#         for job in response['TranscriptionJobSummaries']:
+#             job_names.append(job['TranscriptionJobName'])
+#
+# # get the transcription job s3 uri
+# s3_uris = []
+# for job_name in job_names:
+#     transcribe = boto3.client('transcribe', region_name='us-east-2')
+#     response = transcribe.get_transcription_job(
+#         TranscriptionJobName=job_name
+#     )
+#     s3_uris.append(response['TranscriptionJob']['Transcript']['TranscriptFileUri'])
+#
 
 # json file at an s3 uri. download it
 
