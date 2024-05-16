@@ -4,7 +4,6 @@ from bs4 import BeautifulSoup
 import boto3
 import pandas as pd
 
-
 # getting mp3 audio
 """
 - open the call log
@@ -15,7 +14,7 @@ import pandas as pd
 - upload the audio to S3
 """
 
-#transcription
+# transcription
 """
 - start normal transcriptoin job
 - then start post-call canalytics job for Categories and stuff
@@ -24,7 +23,7 @@ need the customer to be speaker 1
 - wait
 """
 
-#analysis
+# analysis
 """
 - find out metadata, if the deal was closed or not (call log + zenith)
 - download the transcription and assemble the call
@@ -46,10 +45,11 @@ need the customer to be speaker 1
 # # contains each work spoken
 # speech_data = data['results']['items']
 
-#schema
+# schema
 """
 {'type': 'pronunciation', 'alternatives': [{'confidence': '0.999', 'content': 'Thank'}], 'start_time': '3.38', 'end_time': '3.779', 'speaker_label': 'spk_0'}
 """
+
 
 def get_mp3_url(html_content):
     """
@@ -64,6 +64,7 @@ def get_mp3_url(html_content):
     if audio_source and 'src' in audio_source.attrs:
         return audio_source['src']
     return None
+
 
 def download_mp3_from_html(url, save_path):
     """
@@ -95,35 +96,29 @@ def download_mp3_from_html(url, save_path):
     except Exception as e:
         print(f"An error occurred: {e}")
 
+
 # # Example usage
 # original_url = "https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=RE5f8b4ce0a74338da9a21e7bc0d4720b8"
 # save_path = "downloads-new/mp3file.mp3"
 # download_mp3_from_html(original_url, save_path)
 
-call_urls = ['https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=REa8fae3124d2512357eeee072724f6ac0',
-             'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=RE7ddb9736596ff72af3a6e83aadb3f8be',
-             'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=REb6d960d0e8c20f62e95373569fee8f28',
-             'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=RE5f8b4ce0a74338da9a21e7bc0d4720b8',
-             'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=REe3343dc4545bf88c637c083d555401db',
-             'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=REdb2ef4ebfea7fe431da9deb4c3a9ddcb',
-             'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=RE5ffa36faa3134bb9b235b00a1fc3a6d4',
-             'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=RE0c54a5f09c9db90f54844cc6c317e570',
-             'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=REa9306adb927342f34f5d6f5ce52a9beb',
-             'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=RE140d7767d0b97cf299c70567499846ae']
+call_urls = [
+    'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=REa8fae3124d2512357eeee072724f6ac0',
+    'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=RE7ddb9736596ff72af3a6e83aadb3f8be',
+    'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=REb6d960d0e8c20f62e95373569fee8f28',
+    'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=RE5f8b4ce0a74338da9a21e7bc0d4720b8',
+    'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=REe3343dc4545bf88c637c083d555401db',
+    'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=REdb2ef4ebfea7fe431da9deb4c3a9ddcb',
+    'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=RE5ffa36faa3134bb9b235b00a1fc3a6d4',
+    'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=RE0c54a5f09c9db90f54844cc6c317e570',
+    'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=REa9306adb927342f34f5d6f5ce52a9beb',
+    'https://admins.callerready.com/Recordings/Recording?AccountSid=AC3951a31053e8b50054f86fa930d61eb6&RecordingSid=RE140d7767d0b97cf299c70567499846ae']
 
 for call_url in call_urls:
     save_path = f"downloads-1/{call_url.split('=')[-1]}.mp3"
     download_mp3_from_html(call_url, save_path)
 
 
-# use boto3 s3 client to list all files in s3://synergy-sandbox-905418409497/test-transcribe-automation/
-s3=boto3.client('s3')
-response = s3.list_objects_v2(Bucket='synergy-sandbox-905418409497', Prefix='test-transcribe-automation/')
-keys = []
-for obj in response.get('Contents', []):
-    keys.append(obj['Key'])
-
-#read transcript into speaker turns
 def construct_transcript_turns(speech_data):
     """
     need to pass in transcript_json['results']['items']
@@ -146,6 +141,28 @@ def construct_transcript_turns(speech_data):
         turns.append({'speaker': current_speaker, 'content': ' '.join(current_content)})
     return turns
 
+
+# use boto3 s3 client to list all files in s3://synergy-sandbox-905418409497/test-transcribe-automation/
+s3 = boto3.client('s3')
+response = s3.list_objects_v2(Bucket='synergy-sandbox-905418409497', Prefix='test-transcribe-automation/')
+keys = []
+for obj in response.get('Contents', []):
+    keys.append(obj['Key'])
+
+# now for each key, download the json file and load it into a variable
+# then extract the speaker turns
+conversations = []
+for key in keys:
+    s3 = boto3.client('s3')
+    response = s3.get_object(Bucket='synergy-sandbox-905418409497', Key=key)
+    data = json.loads(response['Body'].read())
+    speech_data = data['results']['items']
+    # Construct transcript turns
+    conversation = construct_transcript_turns(speech_data)
+    conversations.append(conversation)
+
+# read transcript into speaker turns
+
 """
 # Construct transcript turns
 transcript_turns = construct_transcript_turns(speech_data)
@@ -154,6 +171,8 @@ transcript_turns = construct_transcript_turns(speech_data)
 for turn in transcript_turns:
     print(turn)
 """
+
+
 def fetch_call_log():
     s3 = boto3.resource('s3')
     bucket_name = 'synergy-sandbox-905418409497'
@@ -164,6 +183,7 @@ def fetch_call_log():
     df = pd.read_csv(io.BytesIO(data), low_memory=False)
     return df
 
+
 def get_call_urls(df):
     # filter out calls that are > 20 seconds
     # make list
@@ -171,16 +191,18 @@ def get_call_urls(df):
     for call_url in df[df['Conference Time (seconds)'] > 20]['Recording']:
         call_urls.append(call_url)
     return call_urls
+
+
 def start_transcription_job(job_name, media_s3_uri, output_bucket, output_key):
-    transcribe_client=boto3.client('transcribe', region_name='us-east-2') #check bucket region
+    transcribe_client = boto3.client('transcribe', region_name='us-east-2')  # check bucket region
     return transcribe_client.start_transcription_job(
-        TranscriptionJobName = job_name,
-        Media = {
+        TranscriptionJobName=job_name,
+        Media={
             'MediaFileUri': media_s3_uri
         },
-        MediaFormat = 'mp3',
-        OutputBucketName = output_bucket,
-        OutputKey = output_key,
+        MediaFormat='mp3',
+        OutputBucketName=output_bucket,
+        OutputKey=output_key,
         Settings={
             'ShowSpeakerLabels': True,
             'MaxSpeakerLabels': 2,
@@ -188,23 +210,24 @@ def start_transcription_job(job_name, media_s3_uri, output_bucket, output_key):
             'ShowAlternatives': False,
             'MaxAlternatives': 1
         },
-        LanguageCode = 'en-US'
+        LanguageCode='en-US'
     )
 
-#automatically flags categories
+
+# automatically flags categories
 def start_call_analytics_job(job_name, input_media_uri, output_bucket):
-    transcribe_client=boto3.client('transcribe', region_name='us-east-1') #check bucket region
+    transcribe_client = boto3.client('transcribe', region_name='us-east-1')  # check bucket region
     return transcribe_client.start_call_analytics_job(
-        CallAnalyticsJobName = job_name,
-        Settings = {
+        CallAnalyticsJobName=job_name,
+        Settings={
             'LanguageOptions': ['en-US'],
         },
         DataAccessRoleArn='arn:aws:iam::905418409497:role/service-role/AmazonTranscribeServiceRole-my-transcribe-role',
-        Media = {
+        Media={
             'MediaFileUri': input_media_uri
         },
-        OutputLocation =  f's3://{output_bucket}/call-analytics-output/analytics-{job_name}.json',
-        ChannelDefinitions = [
+        OutputLocation=f's3://{output_bucket}/call-analytics-output/analytics-{job_name}.json',
+        ChannelDefinitions=[
             {
                 'ChannelId': 0,
                 'ParticipantRole': 'AGENT'
@@ -216,10 +239,11 @@ def start_call_analytics_job(job_name, input_media_uri, output_bucket):
         ]
     )
 
+
 # start the transcription job with each key
-job_names=[]
+job_names = []
 for key in keys:
-    #make the job name just the key without the prefix
+    # make the job name just the key without the prefix
     job_name = key.split('/')[-1].split('.')[0]
     print(job_name)
     if len(job_name) > 0:
@@ -231,8 +255,8 @@ for key in keys:
         )
         )
 
-#list transcription jobs
-transcribe=boto3.client('transcribe', region_name='us-east-2')
+# list transcription jobs
+transcribe = boto3.client('transcribe', region_name='us-east-2')
 response = transcribe.list_transcription_jobs(
     MaxResults=5,
 )
@@ -250,13 +274,14 @@ while 'NextToken' in response:
             job_names.append(job['TranscriptionJobName'])
 
 # get the transcription job s3 uri
-s3_uris=[]
+s3_uris = []
 for job_name in job_names:
-    transcribe=boto3.client('transcribe', region_name='us-east-2')
+    transcribe = boto3.client('transcribe', region_name='us-east-2')
     response = transcribe.get_transcription_job(
         TranscriptionJobName=job_name
     )
     s3_uris.append(response['TranscriptionJob']['Transcript']['TranscriptFileUri'])
+
 
 # json file at an s3 uri. download it
 
@@ -267,6 +292,7 @@ def download_transcription(s3_uri):
     response = s3.get_object(Bucket=bucket, Key=key)
     data = response['Body'].read()
     return json.loads(data)
+
 
 ### analysis
 """
@@ -331,6 +357,7 @@ List the turning points in an array. For each turning point, state what the cust
 and summarize the sequence of events that led up to the turning point.
 """
 
+
 def list_objections(conversation_turns):
     prompt = """
     above is a phone conversation transcript. The agent who received the call is "spk_0". 
@@ -348,6 +375,7 @@ def list_objections(conversation_turns):
     """
     # call the llm
     return []
+
 
 def list_highlights(conversation_turns):
     prompt = """
@@ -374,6 +402,7 @@ JSON:
     # call the llm
     return []
 
+
 def analyze_post_call_analytics(s3_uri):
     """
     10 for the analytics, just make it a binary on the categories (rapport, and mechanics), --
@@ -386,15 +415,16 @@ def analyze_post_call_analytics(s3_uri):
     duration = data['ConversationCharacteristics']['TotalConversationDurationMillis']
     talk_time = data['ConversationCharacteristics']['TalkTime']['TotalTimeMillis']
     silence_time = data['ConversationCharacteristics']['NonTalkTime']['TotalTimeMillis']
-    talk_speed = data['ConversationCharacteristics']['TalkSpeed']['DetailsByParticipant']['AGENT']['AverageWordsPerMinute']
+    talk_speed = data['ConversationCharacteristics']['TalkSpeed']['DetailsByParticipant']['AGENT'][
+        'AverageWordsPerMinute']
     num_interruptions = data['ConversationCharacteristics']['Interruptions']['TotalCount']
     overall_sentiment = data['ConversationCharacteristics']['Sentiment']['OverallSentiment']['AGENT']
 
     talk_time_percent = talk_time / duration
     silence_time_percent = silence_time / duration
 
-    #find matched categories if they exist
-    categories = data['Categories']['MatchedCategories'] #an array of categories
+    # find matched categories if they exist
+    categories = data['Categories']['MatchedCategories']  # an array of categories
 
     # add these to a database
     return {
@@ -408,6 +438,7 @@ def analyze_post_call_analytics(s3_uri):
         'silence_time_percent': silence_time_percent,
         'categories': categories
     }
+
 
 def analyze_transcript(transcript_json):
     """
@@ -442,7 +473,7 @@ def analyze_transcript(transcript_json):
 FUTURE: write a prompt that describes correct objection handling, and then compare the agent's responses to the correct responses, give them a score.
 """
 
-#mistrla
+# mistrla
 """
 {
   "modelId": "mistral.mistral-7b-instruct-v0:2",
@@ -451,6 +482,7 @@ FUTURE: write a prompt that describes correct objection handling, and then compa
   "body": "{\"prompt\":\"<s>[INST]In Bash, how do I list all text files in the current directory (excluding subdirectories) that have been modified in the last month?[/INST]\",\"max_tokens\":400,\"top_k\":50,\"top_p\":0.7,\"temperature\":0.7}"
 }
 """
+
 
 # def invoke_model(prompt):
 #     bedrock_runtime = boto3.client('bedrock-runtime', region_name='us-east-1')
@@ -484,5 +516,130 @@ def invoke_model(prompt):
     )
     response_body = json.loads(response["body"].read())
     return response_body
-    #resp=invoke_model(prompt)
-    #json.loads(resp['outputs'][0]['text'].strip())
+    # resp=invoke_model(prompt)
+    # json.loads(resp['outputs'][0]['text'].strip())
+
+
+### catalog all the objections
+"""
+get 100 transcriptions
+get all objections,
+tell the llm to classify them with short phrases like 'not interested', 'too expensive', 'not sure'. And
+give it an accepted response.
+[{id: ...,
+example-objection: ...,
+accepted-response: ...,
+}]
+
+once they are all classified
+"""
+
+return_example=[{
+    "id": "is-this-a-scam",
+    "example_objection": "I'm not sure if this is real or not",
+    "example_response": "We've been in business for 15 years and have been accredited by the better business bureau",
+}]
+
+scoring_example=[{
+    "id": "legitimacy",
+    "example_objection": "I'm not sure if this is real or not",
+    "actual_objection": "Is this real?",
+    "example_response": "We've been in business for 15 years and have been accredited by the better business bureau",
+    "agent_response": "We've been around for a while and have a good reputation",
+    "score": 5
+}]
+
+def create_prompt(transcript):
+    prompt = f"""
+{transcript}
+
+---
+
+above is a phone conversation transcript. The agent who received the call is "spk_0". 
+The customer is "spk_1". The company taking the call offers structured debt services for people 
+with debts they cannot pay off, such as credit card debt or medical bills. This is a sales call 
+where the agent seeks to get the customer to commit to the service.
+Find all the objections the customer discusses in this call, such as concerns about whether 
+the offer is legitimate, and whether the credit check will hurt them. List them in an array. 
+Give each an "id" for classification purposes.
+Do not include the agent's objections. Only list those of the customer. Combine similar objections.
+For example, if the customer expresses doubt about the sincerity of the offer in two different ways,
+combine them into one objection. For each objection, state how the agent handles responds. 
+If the agent doesn't directly address the objection, state how the agent redirects the conversation. 
+Return an array of objects like this:
+{json.dumps(return_example)}
+JSON:
+"""
+    return prompt
+
+def create_objection_scoring_prompt(library, transcript, scoring_example):
+    prompt = f"""
+{transcript}
+
+--- 
+objection library:
+{json.dumps(library)}
+---
+
+above is a phone conversation transcript, followed by an objection library. The agent who received 
+the call is "spk_0". The customer is "spk_1". The company taking the call offers structured debt services for people
+with debts they cannot pay off, such as credit card debt or medical bills. This is a sales call
+where the agent seeks to get the customer to commit to the service.
+Find all the objections the customer discusses in this call, such as concerns about whether
+the offer is legitimate, and whether the credit check will hurt them. Compare them to the list of
+accepted objections and responses in the library. For each objection, state how the agent handles responds.
+then, give the agent a score based on how well they handled the objection. If the agent's response is
+close to the accepted response, give them a score of 10. If the agent's response is the opposite of 
+the accepted response, give a 0. You can give numbers in between too. Return an array of objects like this:
+{json.dumps(scoring_example)}
+JSON:
+"""
+    return prompt
+
+
+def load_responses(conversations):
+    responses = []
+    dead_responses=[]
+    for conversation in conversations:
+        prompt = create_prompt(conversation)
+        print(prompt[:200])
+        response = invoke_model(prompt)
+        try:
+            ary = json.loads(response['outputs'][0]['text'].strip())
+            for obj in ary:
+                responses.append(obj)
+        except:
+            dead_responses.append(response)
+    return responses, dead_responses
+
+def load_score_responses(conversations):
+    responses = []
+    dead_responses=[]
+    for conversation in conversations:
+        # prompt = create_prompt(conversation)
+        p = create_objection_scoring_prompt(library, conversation, scoring_example)
+        print(p[:200])
+        response = invoke_model(p)
+        try:
+            ary = json.loads(response['outputs'][0]['text'].strip())
+            responses.append(ary)
+        except:
+            dead_responses.append(response)
+    return responses, dead_responses
+    #scores, broken_scores=load_score_responses(conversations)
+
+def calculate_objection_score(data):
+    total_score = 0
+    num_objects = len(data)
+
+    for obj in data:
+        total_score += obj['score']
+
+    average_score = total_score / num_objects
+    return average_score, num_objects
+    # for score in scores:
+    #     average_score, num_objections = calculate_objection_score(score)
+    #     print('***')
+    #     print(f'{num_objections} objections')
+    #     print(f'{average_score} avg score')
+    #     print('////')

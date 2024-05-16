@@ -1,0 +1,102 @@
+[
+  {
+    "id": "insufficient_debt",
+    "example_objection": "I don't think I have enough debt to qualify",
+    "example_response": "We can look into it to see if you have enough debt"
+  },
+  {
+    "id": "unfamiliar_creditors",
+    "example_objection": "I don't know which creditors I have and which debts qualify",
+    "example_response": "I can pull up all the debts on your credit report for you"
+  },
+  {
+    "id": "credit_check_concerns",
+    "example_objection": "I'm worried about the credit check hurting my score",
+    "example_response": "It's a soft credit pull, which doesn't affect your credit score negatively"
+  },
+  {
+    "id": "misunderstanding_offer",
+    "example_objection": "I thought it was a loan program",
+    "example_response": "This is not a loan program, it's a debt relief program"
+  },
+  {
+    "id": "minimum_debt_amount",
+    "example_objection": "I don't have enough debt to qualify",
+    "example_response": "Our minimum debt amount to qualify is 7500."
+  },
+  {
+    "id": "unsure_about_debt_amount",
+    "example_objection": "I'm not really sure about the amount of debt I have",
+    "example_response": "That's okay, we can help you gather that information and determine if you meet the minimum debt requirement."
+  },
+  {
+    "id": "unsure_about_qualification",
+    "example_objection": "I don't think I'll qualify.",
+    "example_response": "Let's go through the qualification process together to see if you do meet the requirements."
+  },
+  {
+    "id": "need_more_time",
+    "example_objection": "I need to write down everything and communicate with someone before making a decision",
+    "example_response": "We can set up the rest of the process for Monday when you have all the necessary information"
+  },
+  {
+    "id": "cant_provide_banking_info",
+    "example_objection": "I don't have my banking information on me",
+    "example_response": "We can text you my direct office line for you to call back and provide the information"
+  },
+  {
+    "id": "concerns_about_credit_check",
+    "example_objection": "What will a credit check do?",
+    "example_response": "It's a soft pull, which won't affect your credit score. It just allows us to discuss your situation and potential solutions."
+  },
+  {
+    "id": "unclear_on_qualification_criteria",
+    "example_objection": "How do I qualify for this program?",
+    "example_response": "Our program is based on financial hardship. We'll assess your situation and determine if you're eligible."
+  },
+  {
+    "id": "skepticism_about_affordability",
+    "example_objection": "Can I really afford the monthly payment?",
+    "example_response": "The goal is to lower your monthly payment significantly. We aim for around $300 a month."
+  },
+  {
+    "id": "wants_to_keep_current_information_private",
+    "example_objection": "I don't want to share my credit score",
+    "example_response": "Your credit score isn't a factor in getting qualified for our program. It's a hardship program."
+  },
+  {
+    "id": "misunderstanding_debt_settlement",
+    "example_objection": "I thought you were giving me money",
+    "example_response": "No, we're helping you negotiate with your creditors to reduce your debt"
+  },
+  {
+    "id": "affordability",
+    "example_objection": "I don't know if I can afford the payments",
+    "example_response": "We'll work with you to find a payment plan that fits your budget"
+  },
+  {
+    "id": "legitimacy",
+    "example_objection": "I'm not sure if this is legitimate or not",
+    "example_response": "We've been in business for over a decade and have helped thousands of people reduce their debt"
+  },
+  {
+    "id": "credit_check",
+    "example_objection": "I'm worried about the impact of a credit check on my score",
+    "example_response": "A soft inquiry won't affect your credit score, and we'll work to minimize the impact on your credit report"
+  },
+  {
+    "id": "not_what_you_need",
+    "example_objection": "I'm looking for a loan, but you offer debt mediation",
+    "example_response": "We help you negotiate and lower your debts, which can save you money in the long run"
+  },
+  {
+    "id": "identity_theft",
+    "example_objection": "I've had identity theft issues in the past, I'm wary of sharing personal information",
+    "example_response": "We take security seriously and can send you documentation to verify our legitimacy"
+  },
+  {
+    "id": "no_debt",
+    "example_objection": "I don't have any debt",
+    "example_response": "Our services are for those struggling with debt, if you don't have any, we can't assist you"
+  }
+]
