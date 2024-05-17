@@ -38,7 +38,7 @@ need the customer to be speaker 1
 """
 - find out metadata, if the deal was closed or not (call log + zenith)
 - download the transcription and assemble the call
-- llms: 
+- llms:
 -- find turning points - objections, questions, etc
 -- find successful points from the sales agent (speaker 0)
 -- what are their sources of debt?
@@ -317,43 +317,43 @@ prompts
 to find objections
 
 1
-above is a phone conversation transcript. The agent who received the call is "spk_0". 
-A customer is "spk_1". The company taking the call offers structured debt services for people 
-with debts they cannot pay off, such as credit card debt or medical bills. This is a sales call. 
+above is a phone conversation transcript. The agent who received the call is "spk_0".
+A customer is "spk_1". The company taking the call offers structured debt services for people
+with debts they cannot pay off, such as credit card debt or medical bills. This is a sales call.
 Find all the objections the customer discusses in this call. List them in an array.
 
 2
-above is a phone conversation transcript. The agent who received the call is "spk_0". 
-A customer is "spk_1". The company taking the call offers structured debt services for people 
-with debts they cannot pay off, such as credit card debt or medical bills. This is a sales call. 
-Find all the objections the customer discusses in this call, such as concerns about whether 
+above is a phone conversation transcript. The agent who received the call is "spk_0".
+A customer is "spk_1". The company taking the call offers structured debt services for people
+with debts they cannot pay off, such as credit card debt or medical bills. This is a sales call.
+Find all the objections the customer discusses in this call, such as concerns about whether
 the offer is legitimate, and whether the credit check will hurt them. List them in an array.
 Do not include the agent's objections, only those of the customer.
 
 3
-above is a phone conversation transcript. The agent who received the call is "spk_0". 
-The customer is "spk_1". The company taking the call offers structured debt services for people 
-with debts they cannot pay off, such as credit card debt or medical bills. This is a sales call 
+above is a phone conversation transcript. The agent who received the call is "spk_0".
+The customer is "spk_1". The company taking the call offers structured debt services for people
+with debts they cannot pay off, such as credit card debt or medical bills. This is a sales call
 where the agent seeks to get the customer to commit to the service.
-Find all the objections the customer discusses in this call, such as concerns about whether 
+Find all the objections the customer discusses in this call, such as concerns about whether
 the offer is legitimate, and whether the credit check will hurt them. List them in an array.
 Do not include the agent's objections. Only list those of the customer. Combine similar objections.
 For example, if the customer expresses doubt about the sincerity of the offer in two different ways,
-combine them into one objection. For each objection, state how the agent handles responds. 
-If the agent doesn't directly address the objection, state how the agent redirects the conversation. 
+combine them into one objection. For each objection, state how the agent handles responds.
+If the agent doesn't directly address the objection, state how the agent redirects the conversation.
 Return a response like this:
 [{objection: ..., response: ...}, ...]
 
 
 list and categorize highlights
-above is a phone conversation transcript. The agent who received the call is "spk_0". 
-The customer is "spk_1". The company taking the call offers structured debt services for people 
-with debts they cannot pay off, such as credit card debt or medical bills. This is a sales call 
-where the agent seeks to get the customer to commit to the service. 
+above is a phone conversation transcript. The agent who received the call is "spk_0".
+The customer is "spk_1". The company taking the call offers structured debt services for people
+with debts they cannot pay off, such as credit card debt or medical bills. This is a sales call
+where the agent seeks to get the customer to commit to the service.
 Find up to 10 highlights of the call. A highlight is a moment in the conversation where the agent
 successfully handles an objection or concern of the customer, or where the agent successfully convinces
 the customer to commit to the service, or where the agent clearly explains the service in a way that
-the customer seems to understand. List the highlights in an array. For each highlight, quote the part of 
+the customer seems to understand. List the highlights in an array. For each highlight, quote the part of
 the transcript that you are highlighting, summarize the highlight, and categorize it as one of the following:
 - objection_handled
 - customer_convinced
@@ -376,16 +376,16 @@ and summarize the sequence of events that led up to the turning point.
 
 def list_objections(conversation_turns):
     prompt = """
-    above is a phone conversation transcript. The agent who received the call is "spk_0". 
-    The customer is "spk_1". The company taking the call offers structured debt services for people 
-    with debts they cannot pay off, such as credit card debt or medical bills. This is a sales call 
+    above is a phone conversation transcript. The agent who received the call is "spk_0".
+    The customer is "spk_1". The company taking the call offers structured debt services for people
+    with debts they cannot pay off, such as credit card debt or medical bills. This is a sales call
     where the agent seeks to get the customer to commit to the service.
-    Find all the objections the customer discusses in this call, such as concerns about whether 
+    Find all the objections the customer discusses in this call, such as concerns about whether
     the offer is legitimate, and whether the credit check will hurt them. List them in an array.
     Do not include the agent's objections. Only list those of the customer. Combine similar objections.
     For example, if the customer expresses doubt about the sincerity of the offer in two different ways,
-    combine them into one objection. For each objection, state how the agent handles responds. 
-    If the agent doesn't directly address the objection, state how the agent redirects the conversation. 
+    combine them into one objection. For each objection, state how the agent handles responds.
+    If the agent doesn't directly address the objection, state how the agent redirects the conversation.
     Return a response like this:
     [{objection: ..., response: ...}, ...]
     """
@@ -395,14 +395,14 @@ def list_objections(conversation_turns):
 
 def list_highlights(conversation_turns):
     prompt = """
-    above is a phone conversation transcript. The agent who received the call is "spk_0". 
-The customer is "spk_1". The company taking the call offers structured debt services for people 
-with debts they cannot pay off, such as credit card debt or medical bills. This is a sales call 
-where the agent seeks to get the customer to commit to the service. 
+    above is a phone conversation transcript. The agent who received the call is "spk_0".
+The customer is "spk_1". The company taking the call offers structured debt services for people
+with debts they cannot pay off, such as credit card debt or medical bills. This is a sales call
+where the agent seeks to get the customer to commit to the service.
 Find up to 10 highlights of the call. A highlight is a moment in the conversation where the agent
 successfully handles an objection or concern of the customer, or where the agent successfully convinces
 the customer to commit to the service, or where the agent clearly explains the service in a way that
-the customer seems to understand. List the highlights in an array. For each highlight, quote the part of 
+the customer seems to understand. List the highlights in an array. For each highlight, quote the part of
 the transcript that you are highlighting, summarize the highlight, and categorize it as one of the following:
 - objection_handled
 - customer_convinced
@@ -456,18 +456,19 @@ def analyze_post_call_analytics(s3_uri):
     }
 
 
-def analyze_transcript(transcript_json):
+def get_conversation(s3_uri):
     """
     find objections and classify
     find highlights and classify
     """
+    transcript_json = download_transcription(s3_uri)
     # contains each work spoken
     speech_data = transcript_json['results']['items']
 
     # Construct transcript turns
     conversation = construct_transcript_turns(speech_data)
-    objections = []
-    highlights = []
+    return conversation
+
 
 
 # overall processing algorithm
@@ -571,17 +572,17 @@ def create_prompt(transcript):
 
 ---
 
-above is a phone conversation transcript. The agent who received the call is "spk_0". 
-The customer is "spk_1". The company taking the call offers structured debt services for people 
-with debts they cannot pay off, such as credit card debt or medical bills. This is a sales call 
+above is a phone conversation transcript. The agent who received the call is "spk_0".
+The customer is "spk_1". The company taking the call offers structured debt services for people
+with debts they cannot pay off, such as credit card debt or medical bills. This is a sales call
 where the agent seeks to get the customer to commit to the service.
-Find all the objections the customer discusses in this call, such as concerns about whether 
-the offer is legitimate, and whether the credit check will hurt them. List them in an array. 
+Find all the objections the customer discusses in this call, such as concerns about whether
+the offer is legitimate, and whether the credit check will hurt them. List them in an array.
 Give each an "id" for classification purposes.
 Do not include the agent's objections. Only list those of the customer. Combine similar objections.
 For example, if the customer expresses doubt about the sincerity of the offer in two different ways,
-combine them into one objection. For each objection, state how the agent handles responds. 
-If the agent doesn't directly address the objection, state how the agent redirects the conversation. 
+combine them into one objection. For each objection, state how the agent handles responds.
+If the agent doesn't directly address the objection, state how the agent redirects the conversation.
 Return an array of objects like this:
 {json.dumps(return_example)}
 JSON:
@@ -592,12 +593,12 @@ def create_objection_scoring_prompt(library, transcript, scoring_example):
     prompt = f"""
 {transcript}
 
---- 
+---
 objection library:
 {json.dumps(library)}
 ---
 
-above is a phone conversation transcript, followed by an objection library. The agent who received 
+above is a phone conversation transcript, followed by an objection library. The agent who received
 the call is "spk_0". The customer is "spk_1". The company taking the call offers structured debt services for people
 with debts they cannot pay off, such as credit card debt or medical bills. This is a sales call
 where the agent seeks to get the customer to commit to the service.
@@ -605,7 +606,7 @@ Find all the objections the customer discusses in this call, such as concerns ab
 the offer is legitimate, and whether the credit check will hurt them. Compare them to the list of
 accepted objections and responses in the library. For each objection, state how the agent handles responds.
 then, give the agent a score based on how well they handled the objection. If the agent's response is
-close to the accepted response, give them a score of 10. If the agent's response is the opposite of 
+close to the accepted response, give them a score of 10. If the agent's response is the opposite of
 the accepted response, give a 0. You can give numbers in between too. Return an array of objects like this:
 {json.dumps(scoring_example)}
 JSON:
