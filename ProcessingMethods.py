@@ -153,25 +153,22 @@ def construct_transcript_turns(speech_data):
         turns.append({'speaker': current_speaker, 'content': ' '.join(current_content)})
     return turns
 
-
-# # use boto3 s3 client to list all files in s3://synergy-sandbox-905418409497/test-transcribe-automation/
-# s3 = boto3.client('s3')
-# response = s3.list_objects_v2(Bucket='synergy-sandbox-905418409497', Prefix='test-transcribe-automation/')
-# keys = []
-# for obj in response.get('Contents', []):
-#     keys.append(obj['Key'])
-#
-# # now for each key, download the json file and load it into a variable
-# # then extract the speaker turns
-# conversations = []
-# for key in keys:
-#     s3 = boto3.client('s3')
-#     response = s3.get_object(Bucket='synergy-sandbox-905418409497', Key=key)
-#     data = json.loads(response['Body'].read())
-#     speech_data = data['results']['items']
-#     # Construct transcript turns
-#     conversation = construct_transcript_turns(speech_data)
-#     conversations.append(conversation)
+def load_files_from_bucket_and_prefix(bucket, prefix):
+    # # use boto3 s3 client to list all files in s3://synergy-sandbox-905418409497/test-transcribe-automation/
+    s3 = boto3.client('s3')
+    response = s3.list_objects_v2(Bucket=bucket, Prefix=prefix)
+    keys = []
+    for obj in response.get('Contents', []):
+        keys.append(obj['Key'])
+    # now for each key, download the json file and load it into a variable
+    # then extract the speaker turns
+    objection_scores = []
+    for key in keys:
+        response = s3.get_object(Bucket=bucket, Key=key)
+        data = json.loads(response['Body'].read())
+        # Construct transcript turns
+        objection_scores.append(data)
+    return objection_scores
 
 # read transcript into speaker turns
 
@@ -199,9 +196,35 @@ def fetch_call_log(bucket_name, object_key):
 def get_call_urls(df, duration_threshold=20):
     # filter out calls that are > 20 seconds
     # make list
+    filtered_df = df[df['Conference Time (seconds)'] > duration_threshold]
     call_urls = []
-    for call_url in df[df['Conference Time (seconds)'] > 20]['Recording']:
-        call_urls.append(call_url)
+
+    # convert to list
+    filtered_df = filtered_df.to_dict('records')
+
+    # get the url, duration, and tracking_guid for this smaller list
+    for call_url in filtered_df:
+        call_urls.append({
+            'url': call_url['Recording'],
+            'duration': call_url['Conference Time (seconds)'],
+            'tracking_guid': call_url['TrackingGuid'],
+        })
+
+    # get the url, duration, and tracking_guid for this smaller list
+#     for call_url in filtered_df:
+#         call_urls.append({
+#             'url': call_url['Recording'],
+#             'duration': call_url['Conference Time (seconds)'],
+#             'tracking_guid': call_url['TrackingGuid'],
+#         })
+
+#     for call_url in filtered_df:
+#         print('call_url', call_url)
+#         call_urls.append({
+#             'url': call_url['Recording'],
+#             'duration': call_url['Conference Time (seconds)'],
+#             'tracking_guid': call_url['TrackingGuid'],
+#         })
     return call_urls
 
 
@@ -622,6 +645,7 @@ def load_responses(conversations):
         print(prompt[:200])
         response = invoke_model(prompt)
         try:
+            print('model response', response)
             ary = json.loads(response['outputs'][0]['text'].strip())
             for obj in ary:
                 responses.append(obj)
@@ -629,19 +653,17 @@ def load_responses(conversations):
             dead_responses.append(response)
     return responses, dead_responses
 
-def load_score_responses(conversations):
+def generate_score_responses(conversation, library, scoring_example):
     responses = []
     dead_responses=[]
-    for conversation in conversations:
-        # prompt = create_prompt(conversation)
-        p = create_objection_scoring_prompt(library, conversation, scoring_example)
-        print(p[:200])
-        response = invoke_model(p)
-        try:
-            ary = json.loads(response['outputs'][0]['text'].strip())
-            responses.append(ary)
-        except:
-            dead_responses.append(response)
+    p = create_objection_scoring_prompt(library, conversation, scoring_example)
+    print(p[:200])
+    response = invoke_model(p)
+    try:
+        ary = json.loads(response['outputs'][0]['text'].strip())
+        responses.append(ary)
+    except:
+        dead_responses.append(response)
     return responses, dead_responses
     #scores, broken_scores=load_score_responses(conversations)
 
