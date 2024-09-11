@@ -1,2 +1,5 @@
 .idea
 .venv
+./mp3-downloads
+.__pycache__
+__pycache__/ProcessingMethods.cpython-311.pyc

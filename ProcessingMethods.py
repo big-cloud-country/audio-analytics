@@ -524,23 +524,6 @@ FUTURE: write a prompt that describes correct objection handling, and then compa
 """
 
 
-# def invoke_model(prompt):
-#     bedrock_runtime = boto3.client('bedrock-runtime', region_name='us-east-1')
-#     enclosed_prompt = "<s>[INST]" + prompt + "[/INST]"
-#     body = {
-#         "prompt": enclosed_prompt,
-#         "max_tokens": 1000,
-#     }
-#     response = bedrock_runtime.invoke_model(
-#         body=json.dumps(body),
-#         contentType='application/json',
-#         accept='application/json',
-#         modelId='mistral.mistral-7b-instruct-v0:2'
-#     )
-#     response_body = json.loads(response["body"].read())
-#     completion = response_body["completion"]
-#     return json.loads(completion.strip())
-
 def invoke_model(prompt):
     bedrock_runtime = boto3.client('bedrock-runtime', region_name='us-east-1')
     enclosed_prompt = "<s>[INST]" + prompt + "[/INST]"
